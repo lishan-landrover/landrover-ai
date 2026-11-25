@@ -33,9 +33,12 @@ export default async function handler(req, res) {
             return res.status(200).json({ reply: "API Error: " + data.error.message });
         }
 
-        const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated. Please try again.";
+        const candidate = data.candidates ? data.candidates.at(0) : null;
+        const part = candidate && candidate.content && candidate.content.parts ? candidate.content.parts.at(0) : null;
+        const replyText = part ? part.text : "No response generated. Please try again.";
+
         res.status(200).json({ reply: replyText });
     } catch (error) {
-        res.status(500).json({ reply: "Error connecting to Gemini AI." });
+        res.status(200).json({ reply: "System Error: " + error.message });
     }
 }
