@@ -4,7 +4,8 @@ export default async function handler(req, res) {
     }
 
     const { model, issue } = req.body;
-    const apiKey = process.env.GEMINI_API_KEY;
+    const rawKey = process.env.GEMINI_API_KEY || "";
+    const apiKey = rawKey.trim();
 
     if (!apiKey) {
         return res.status(200).json({ reply: "Error: GEMINI_API_KEY is missing in Vercel settings." });
@@ -19,7 +20,9 @@ export default async function handler(req, res) {
     Keep it practical, helpful, and easy to read.`;
 
     try {
-        const response = await fetch(`https://googleapis.com{apiKey}`, {
+        const url = "https://googleapis.com" + encodeURIComponent(apiKey);
+        
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -39,6 +42,7 @@ export default async function handler(req, res) {
 
         res.status(200).json({ reply: replyText });
     } catch (error) {
-        res.status(200).json({ reply: "System Error: " + error.message });
+        const details = error.cause ? error.cause.message : error.message;
+        res.status(200).json({ reply: "Connection Error: " + details });
     }
 }
