@@ -6,6 +6,10 @@ export default async function handler(req, res) {
     const { model, issue } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
 
+    if (!apiKey) {
+        return res.status(200).json({ reply: "Error: GEMINI_API_KEY is missing in Vercel settings." });
+    }
+
     const prompt = `You are an expert UK Land Rover Master Technician. A user has a ${model} with the following issue: "${issue}". 
     Provide a clear, structured diagnosis in British English:
     1. Likely Causes (Bullet points)
@@ -24,9 +28,14 @@ export default async function handler(req, res) {
         });
 
         const data = await response.json();
-        const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to generate diagnosis. Please try again.";
+
+        if (data.error) {
+            return res.status(200).json({ reply: "API Error: " + data.error.message });
+        }
+
+        const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated. Please try again.";
         res.status(200).json({ reply: replyText });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch diagnosis' });
+        res.status(500).json({ reply: "Error connecting to Gemini AI." });
     }
 }
